@@ -14,6 +14,7 @@ class RamoAdmin(admin.ModelAdmin):
     list_display = ("nombre", "precio", "orden", "activo")
     list_editable = ("precio", "orden", "activo")
     list_filter = ("activo",)
+    filter_horizontal = ("flores",)
 
 
 @admin.register(Contacto)

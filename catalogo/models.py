@@ -48,6 +48,7 @@ class TipoFlor(ConImagen):
 
 class Ramo(ConImagen):
     precio = models.DecimalField(max_digits=8, decimal_places=2)
+    flores = models.ManyToManyField(TipoFlor, blank=True, related_name="ramos", verbose_name="flores que contiene")
 
 
 class Contacto(models.Model):

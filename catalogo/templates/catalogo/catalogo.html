@@ -15,6 +15,7 @@
       <p class="precio">${{ r.precio|floatformat:"-2g" }}</p>
       {% if r.en_pedido %}<p class="aviso">En tus pedidos: {{ r.en_pedido }}</p>{% endif %}
       <div class="acciones centro">
+        <a class="btn btn-suave" href="{% url 'catalogo:detalle_ramo' r.pk %}">Inspeccionar ramo</a>
         <form method="post" action="{% url 'catalogo:favorito_alternar' r.pk %}">
           {% csrf_token %}
           <button type="submit" class="btn btn-suave{% if r.es_favorito %} activo{% endif %}" aria-pressed="{% if r.es_favorito %}true{% else %}false{% endif %}">{% if r.es_favorito %}♥ Te gusta{% else %}♡ Me gusta{% endif %}</button>

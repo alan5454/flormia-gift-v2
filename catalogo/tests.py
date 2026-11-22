@@ -208,3 +208,81 @@ class CatalogoPedidoYPagoTests(Base):
                          (Pedido.CONFIRMADO, "transferencia", "domicilio", "Calle 1, Centro"))
         self.assertIsNotNone(p.confirmado_en)
         self.assertEqual(p.total, self.ramo.precio * 2)
+
+
+class InspeccionarRamoTests(Base):
+    def setUp(self):
+        call_command("cargar_datos")
+        self.ramo = Ramo.objects.get(nombre="Ramo Primavera")
+        self.url = reverse("catalogo:detalle_ramo", args=[self.ramo.pk])
+
+    def test_carga_idempotente_de_flores_por_ramo(self):
+        self.assertEqual(sorted(self.ramo.flores.values_list("nombre", flat=True)), ["Peonías", "Tulipanes"])
+        self.assertTrue(all(r.flores.exists() for r in Ramo.objects.all()))
+        # No sobrescribe lo editado en el admin ni duplica.
+        self.ramo.flores.set(TipoFlor.objects.filter(nombre="Rosas"))
+        call_command("cargar_datos")
+        self.assertEqual(list(self.ramo.flores.values_list("nombre", flat=True)), ["Rosas"])
+        self.assertEqual(Ramo.objects.count(), 7)
+
+    def test_catalogo_tiene_boton_y_no_muestra_flores_del_ramo(self):
+        r = self.get("catalogo")
+        self.assertContains(r, self.url)
+        self.assertContains(r, "Inspeccionar ramo", count=7)
+        self.assertNotContains(r, "Flores que contiene este ramo")
+        html = r.content.decode()
+        seccion_ramos = html.split('id="ramos"')[1].split('id="flores"')[0]
+        # Descripción de Peonías: solo existe en "Flores disponibles" y en el detalle.
+        self.assertNotIn("románticas y exuberantes", seccion_ramos)
+        self.assertIn("Me gusta", seccion_ramos)
+        self.assertIn("Pedir / Añadir", seccion_ramos)
+
+    def test_detalle_muestra_datos_y_flores(self):
+        r = self.client.get(self.url, secure=True)
+        for t in (self.ramo.nombre, self.ramo.descripcion, "Flores que contiene este ramo",
+                  "Tulipanes", "Peonías", "románticas y exuberantes", "Me gusta", "Pedir / Añadir",
+                  reverse("catalogo:catalogo") + "#ramos"):
+            self.assertContains(r, t)
+        self.assertNotContains(r, "Girasoles")
+        nav = r.content.decode().split("<nav")[1].split("</nav>")[0]
+        self.assertEqual(nav.count("<a "), 4)
+
+    def test_detalle_sin_flores_o_inactivas(self):
+        self.ramo.flores.clear()
+        self.assertContains(self.client.get(self.url, secure=True), "Aún no hay flores asignadas")
+        peonias = TipoFlor.objects.get(nombre="Peonías")
+        self.ramo.flores.add(peonias)
+        TipoFlor.objects.filter(pk=peonias.pk).update(activo=False)
+        r = self.client.get(self.url, secure=True)
+        self.assertNotContains(r, "románticas y exuberantes")
+        self.assertContains(r, "Aún no hay flores asignadas")
+
+    def test_detalle_404(self):
+        self.assertEqual(self.client.get(reverse("catalogo:detalle_ramo", args=[99999]), secure=True).status_code, 404)
+        Ramo.objects.filter(pk=self.ramo.pk).update(activo=False)
+        self.assertEqual(self.client.get(self.url, secure=True).status_code, 404)
+
+    def test_anonimo_desde_detalle_va_a_cuenta_sin_guardar(self):
+        for nombre in ("favorito_alternar", "pedido_agregar"):
+            r = self.client.post(reverse(f"catalogo:{nombre}", args=[self.ramo.pk]), {"next": self.url}, secure=True)
+            self.assertEqual(r.status_code, 302)
+            self.assertTrue(r["Location"].startswith(reverse("catalogo:cuenta")))
+            self.assertIn(self.url, r["Location"])
+        self.assertEqual((Favorito.objects.count(), Pedido.objects.count(), ItemPedido.objects.count()), (0, 0, 0))
+
+    def test_login_regresa_al_detalle(self):
+        User.objects.create_user("ana", password="x-Segura-123")
+        r = self.client.post(reverse("catalogo:cuenta"), {"accion": "login", "username": "ana",
+                             "password": "x-Segura-123", "next": self.url}, secure=True)
+        self.assertEqual(r["Location"], self.url)
+
+    def test_con_sesion_regresa_al_mismo_detalle(self):
+        User.objects.create_user("ana", password="x-Segura-123")
+        self.client.login(username="ana", password="x-Segura-123")
+        for nombre in ("favorito_alternar", "pedido_agregar"):
+            r = self.client.post(reverse(f"catalogo:{nombre}", args=[self.ramo.pk]), {"next": self.url}, secure=True)
+            self.assertEqual(r["Location"], self.url)
+        self.assertEqual((Favorito.objects.count(), ItemPedido.objects.get().cantidad), (1, 1))
+        r = self.client.get(self.url, secure=True)
+        self.assertContains(r, "Te gusta")
+        self.assertContains(r, "En tus pedidos: 1")

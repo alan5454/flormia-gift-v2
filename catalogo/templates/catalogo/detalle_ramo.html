@@ -1,0 +1,44 @@
+{% extends "catalogo/base.html" %}
+{% block titulo %}{{ ramo.nombre }} · Flormia Gift{% endblock %}
+{% block contenido %}
+<section class="seccion" id="detalle">
+  <p><a class="volver" href="{% url 'catalogo:catalogo' %}#ramos">← Volver a ramos</a></p>
+  <div class="personaliza detalle">
+    <img class="detalle-img" src="{{ ramo.imagen_url }}" alt="{{ ramo.nombre }}">
+    <div class="detalle-info">
+      <h2>{{ ramo.nombre }}</h2>
+      {% if ramo.descripcion %}<p>{{ ramo.descripcion }}</p>{% endif %}
+      <p class="precio">${{ ramo.precio|floatformat:"-2g" }}</p>
+      {% if en_pedido %}<p class="aviso">En tus pedidos: {{ en_pedido }}</p>{% endif %}
+      <div class="acciones">
+        <form method="post" action="{% url 'catalogo:favorito_alternar' ramo.pk %}">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{% url 'catalogo:detalle_ramo' ramo.pk %}">
+          <button type="submit" class="btn btn-suave{% if es_favorito %} activo{% endif %}" aria-pressed="{% if es_favorito %}true{% else %}false{% endif %}">{% if es_favorito %}♥ Te gusta{% else %}♡ Me gusta{% endif %}</button>
+        </form>
+        <form method="post" action="{% url 'catalogo:pedido_agregar' ramo.pk %}">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{% url 'catalogo:detalle_ramo' ramo.pk %}">
+          <button type="submit" class="btn">{% if en_pedido %}Añadir otro{% else %}Pedir / Añadir{% endif %}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="seccion" id="flores-del-ramo">
+  <h2>Flores que contiene este ramo</h2>
+  {% if flores %}
+  <div class="rejilla flores">
+    {% for f in flores %}
+    <article class="flor">
+      <img src="{{ f.imagen_url }}" alt="{{ f.nombre }}" loading="lazy">
+      <div><h3>{{ f.nombre }}</h3><p>{{ f.descripcion }}</p></div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="vacio">Aún no hay flores asignadas a este ramo.</p>
+  {% endif %}
+</section>
+{% endblock %}

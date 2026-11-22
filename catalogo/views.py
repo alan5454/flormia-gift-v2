@@ -1,5 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth import login, logout
+from urllib.parse import quote
+
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.db import transaction
@@ -40,7 +42,8 @@ def _exigir_sesion(request):
     if request.user.is_authenticated:
         return None
     messages.info(request, "Inicia sesión o crea tu cuenta para guardar tus ramos.")
-    return redirect(f"{reverse('catalogo:cuenta')}?next={reverse('catalogo:catalogo')}")
+    destino = _siguiente(request, reverse("catalogo:catalogo"))
+    return redirect(f"{reverse('catalogo:cuenta')}?next={quote(destino, safe='/')}")
 
 
 def _volver_a_pedidos(request):
@@ -106,6 +109,22 @@ def catalogo(request):
         "total": sum((i.subtotal for i in items), 0),
         "cantidad_total": sum(i.cantidad for i in items),
         "flores": TipoFlor.objects.filter(activo=True),
+    })
+
+
+def detalle_ramo(request, ramo_id):
+    ramo = _ramo_activo(ramo_id)
+    es_favorito, en_pedido = False, 0
+    if request.user.is_authenticated:
+        es_favorito = Favorito.objects.filter(usuario=request.user, ramo=ramo).exists()
+        item = ItemPedido.objects.filter(pedido__usuario=request.user, ramo=ramo).first()
+        en_pedido = item.cantidad if item else 0
+    return render(request, "catalogo/detalle_ramo.html", {
+        "seccion": "catalogo",
+        "ramo": ramo,
+        "flores": ramo.flores.filter(activo=True),
+        "es_favorito": es_favorito,
+        "en_pedido": en_pedido,
     })
 
 

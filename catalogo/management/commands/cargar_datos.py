@@ -25,6 +25,15 @@ RAMOS = [  # nombre, descripción, precio, imagen
     ("Ramo Gran Detalle", "24 rosas premium", 890, "flor-magenta.svg"),
     ("Ramo Ternura", "claveles y gerberas en tonos suaves", 480, "flor-durazno.svg"),
 ]
+FLORES_POR_RAMO = {
+    "Ramo Dulce Amanecer": ["Rosas"],
+    "Ramo Pureza": ["Lirios"],
+    "Ramo Campo Fresco": ["Girasoles", "Margaritas"],
+    "Ramo Primavera": ["Tulipanes", "Peonías"],
+    "Ramo Lavanda y Luz": ["Orquídeas", "Lirios"],
+    "Ramo Gran Detalle": ["Rosas"],
+    "Ramo Ternura": ["Claveles", "Gerberas"],
+}
 CONTACTO = {
     "direccion": "C. Mexicali 9021, Magisterial, 22470 Tijuana, B.C.",
     "facebook": "https://www.facebook.com/share/18A2WsrtXo/?mibextid=wwXIfr",
@@ -46,6 +55,12 @@ class Command(BaseCommand):
             _, creado = Ramo.objects.get_or_create(
                 nombre=nombre, defaults={"descripcion": desc, "precio": precio, "imagen": I + img, "orden": n})
             nuevos += creado
+
+        # Solo asigna flores a ramos que aún no tienen ninguna (no pisa lo editado en el admin).
+        for nombre, flores in FLORES_POR_RAMO.items():
+            ramo = Ramo.objects.filter(nombre=nombre).first()
+            if ramo and not ramo.flores.exists():
+                ramo.flores.set(TipoFlor.objects.filter(nombre__in=flores))
 
         contacto, creado = Contacto.objects.get_or_create(pk=1, defaults=CONTACTO)
         nuevos += creado

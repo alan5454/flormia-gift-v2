@@ -114,6 +114,13 @@ a.pill{text-decoration:none;display:inline-block}
 .opciones input{accent-color:var(--rosa)}
 .vacio{font-size:.95rem}
 
+.volver{color:var(--rosa);text-decoration:none}
+.volver:hover{text-decoration:underline}
+.detalle{align-items:center}
+.detalle-img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px}
+.detalle-info{display:grid;gap:1rem}
+.detalle-info h2{margin:0}
+
 /* Contacto y pie */
 .contacto{display:grid;grid-template-columns:9rem 1fr;gap:.8rem 1rem;margin-top:1.5rem;max-width:620px}
 .contacto dt{font-family:var(--titulo);font-size:1.25rem;color:var(--salvia)}
