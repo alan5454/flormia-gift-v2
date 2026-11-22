@@ -1,0 +1,48 @@
+{% extends "catalogo/base.html" %}
+{% block titulo %}Ramos y flores · Flormia Gift{% endblock %}
+{% block contenido %}
+<section class="seccion" id="ramos">
+  <h2>Ramos disponibles</h2>
+  {% if ramos %}
+  <div class="rejilla productos">
+    {% for r in ramos %}
+    <article class="tarjeta{% if r.en_pedido %} seleccionada{% endif %}">
+      <img src="{{ r.imagen_url }}" alt="{{ r.nombre }}" loading="lazy">
+      <h3>{{ r.nombre }}</h3>
+      {% if r.descripcion %}<p>{{ r.descripcion }}</p>{% endif %}
+      <p class="precio">${{ r.precio|floatformat:"-2g" }}</p>
+      {% if r.en_pedido %}<p class="aviso">En tus pedidos: {{ r.en_pedido }}</p>{% endif %}
+      <div class="acciones centro">
+        <form method="post" action="{% url 'catalogo:favorito_alternar' r.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-suave{% if r.es_favorito %} activo{% endif %}" aria-pressed="{% if r.es_favorito %}true{% else %}false{% endif %}">{% if r.es_favorito %}♥ Te gusta{% else %}♡ Me gusta{% endif %}</button>
+        </form>
+        <form method="post" action="{% url 'catalogo:pedido_agregar' r.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="btn">{% if r.en_pedido %}Añadir otro{% else %}Pedir / Añadir{% endif %}</button>
+        </form>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p>Muy pronto publicaremos nuestros ramos.</p>
+  {% endif %}
+</section>
+
+<section class="seccion" id="flores">
+  <h2>Flores disponibles</h2>
+  {% if flores %}
+  <div class="rejilla flores">
+    {% for f in flores %}
+    <article class="flor">
+      <img src="{{ f.imagen_url }}" alt="{{ f.nombre }}" loading="lazy">
+      <div><h3>{{ f.nombre }}</h3><p>{{ f.descripcion }}</p></div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p>Muy pronto publicaremos nuestras flores.</p>
+  {% endif %}
+</section>
+{% endblock %}

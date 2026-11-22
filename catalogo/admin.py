@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Arreglo, Contacto, Extra, Ramo, TipoFlor
+from .models import Contacto, Favorito, ItemPedido, Pedido, Ramo, TipoFlor
 
 
 @admin.register(TipoFlor)
@@ -11,23 +11,36 @@ class TipoFlorAdmin(admin.ModelAdmin):
 
 @admin.register(Ramo)
 class RamoAdmin(admin.ModelAdmin):
-    list_display = ("nombre", "categoria", "precio", "orden", "activo")
-    list_editable = ("precio", "orden", "activo")
-    list_filter = ("categoria", "activo")
-
-
-@admin.register(Arreglo)
-class ArregloAdmin(admin.ModelAdmin):
     list_display = ("nombre", "precio", "orden", "activo")
     list_editable = ("precio", "orden", "activo")
-
-
-@admin.register(Extra)
-class ExtraAdmin(admin.ModelAdmin):
-    list_display = ("icono", "nombre", "precio", "orden", "activo")
-    list_editable = ("precio", "orden", "activo")
+    list_filter = ("activo",)
 
 
 @admin.register(Contacto)
 class ContactoAdmin(admin.ModelAdmin):
-    list_display = ("telefono", "whatsapp", "redes", "direccion")
+    list_display = ("direccion", "telefono", "whatsapp", "facebook", "instagram")
+
+
+@admin.register(Favorito)
+class FavoritoAdmin(admin.ModelAdmin):
+    list_display = ("usuario", "ramo", "creado")
+    list_filter = ("ramo",)
+    search_fields = ("usuario__username", "ramo__nombre")
+
+
+class ItemPedidoInline(admin.TabularInline):
+    model = ItemPedido
+    extra = 0
+
+
+@admin.register(Pedido)
+class PedidoAdmin(admin.ModelAdmin):
+    list_display = ("usuario", "estado", "cantidad_total", "total", "actualizado")
+    list_filter = ("estado",)
+    search_fields = ("usuario__username",)
+    inlines = [ItemPedidoInline]
+
+
+@admin.register(ItemPedido)
+class ItemPedidoAdmin(admin.ModelAdmin):
+    list_display = ("pedido", "ramo", "cantidad")

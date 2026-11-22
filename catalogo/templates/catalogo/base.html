@@ -1,0 +1,34 @@
+{% load static %}<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{% block titulo %}Flormia Gift · Catálogo floral{% endblock %}</title>
+  <meta name="description" content="Ramos y flores para convertir un día ordinario en uno especial.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=Jost:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'catalogo/css/styles.css' %}">
+</head>
+<body>
+<header class="barra">
+  <a class="marca" href="{% url 'catalogo:inicio' %}">Flormia Gift</a>
+  <nav aria-label="Secciones">
+    <a href="{% url 'catalogo:inicio' %}"{% if seccion == 'inicio' %} class="activo" aria-current="page"{% endif %}>Inicio</a>
+    <a href="{% url 'catalogo:catalogo' %}"{% if seccion == 'catalogo' %} class="activo" aria-current="page"{% endif %}>Ramos y flores</a>
+    <a href="{% url 'catalogo:contacto' %}"{% if seccion == 'contacto' %} class="activo" aria-current="page"{% endif %}>Ubicación y contacto</a>
+    <a href="{% url 'catalogo:cuenta' %}"{% if seccion == 'cuenta' %} class="activo" aria-current="page"{% endif %}>{% if user.is_authenticated %}Mi cuenta{% else %}Iniciar sesión{% endif %}</a>
+  </nav>
+</header>
+
+<main>
+{% if messages %}
+<div class="mensajes" role="status">
+  {% for m in messages %}<p class="mensaje {{ m.tags }}">{{ m }}</p>{% endfor %}
+</div>
+{% endif %}
+{% block contenido %}{% endblock %}
+</main>
+
+<footer class="pie">Flormia Gift · Flores con cariño</footer>
+</body>
+</html>

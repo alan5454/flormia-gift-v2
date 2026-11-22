@@ -1,0 +1,12 @@
+{% extends "catalogo/base.html" %}
+{% block contenido %}
+<section class="hero" id="inicio">
+  <span class="mancha rosa"></span><span class="mancha lavanda"></span><span class="mancha salvia"></span>
+  <h1>Convierte un día ordinario en uno especial</h1>
+  <p>Catálogo de flores y arreglos</p>
+  <div class="acciones">
+    <a class="btn" href="{% url 'catalogo:catalogo' %}#ramos">Ver ramos</a>
+    <a class="btn btn-suave" href="{% url 'catalogo:catalogo' %}#flores">Ver flores</a>
+  </div>
+</section>
+{% endblock %}

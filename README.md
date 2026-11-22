@@ -17,4 +17,5 @@ Start Command:
 Variables: PYTHON_VERSION=3.12.8, SECRET_KEY, DATABASE_URL (Supabase, Session pooler),
 DJANGO_SUPERUSER_USERNAME, DJANGO_SUPERUSER_EMAIL, DJANGO_SUPERUSER_PASSWORD.
 
-Después, en /admin/ → Contacto, escribe tu número de WhatsApp (con lada, solo dígitos).
+Pantallas: / (inicio), /catalogo/ (7 ramos y 9 flores), /contacto/ (ubicación, Facebook, Instagram),
+/cuenta/ (iniciar sesión / crear cuenta; con sesión: favoritos y pedidos). Todo se administra en /admin/.

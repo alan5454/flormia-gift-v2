@@ -1,0 +1,118 @@
+{% extends "catalogo/base.html" %}
+{% block titulo %}{% if user.is_authenticated %}Mi cuenta{% else %}Iniciar sesión{% endif %} · Flormia Gift{% endblock %}
+{% block contenido %}
+{% if user.is_authenticated %}
+<section class="seccion" id="cuenta">
+  <div class="cuenta-cab">
+    <h2>Hola, {{ user.get_username }}</h2>
+    <form method="post" action="{% url 'catalogo:salir' %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-suave">Cerrar sesión</button>
+    </form>
+  </div>
+
+  <div class="filtros" role="tablist" aria-label="Mi cuenta">
+    <a class="pill{% if tab == 'favoritos' %} activo{% endif %}" href="{% url 'catalogo:cuenta' %}?tab=favoritos" role="tab" aria-selected="{% if tab == 'favoritos' %}true{% else %}false{% endif %}">Ramos que me gustaron ({{ favoritos|length }})</a>
+    <a class="pill{% if tab == 'pedidos' %} activo{% endif %}" href="{% url 'catalogo:cuenta' %}?tab=pedidos" role="tab" aria-selected="{% if tab == 'pedidos' %}true{% else %}false{% endif %}">Ramos que pedí ({{ cantidad_total }})</a>
+  </div>
+
+  {% if tab == 'favoritos' %}
+  <h3 class="subtitulo">Ramos que me gustaron</h3>
+  {% if favoritos %}
+  <div class="rejilla productos">
+    {% for f in favoritos %}
+    <article class="tarjeta">
+      <img src="{{ f.ramo.imagen_url }}" alt="{{ f.ramo.nombre }}" loading="lazy">
+      <h3>{{ f.ramo.nombre }}</h3>
+      {% if f.ramo.descripcion %}<p>{{ f.ramo.descripcion }}</p>{% endif %}
+      <p class="precio">${{ f.ramo.precio|floatformat:"-2g" }}</p>
+      <div class="acciones centro">
+        <form method="post" action="{% url 'catalogo:favorito_a_pedido' f.ramo_id %}">{% csrf_token %}<button type="submit" class="btn">Pasar a pedidos</button></form>
+        <form method="post" action="{% url 'catalogo:favorito_quitar' f.ramo_id %}">{% csrf_token %}<button type="submit" class="btn btn-suave">Quitar</button></form>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="vacio">Aún no tienes ramos favoritos.</p>
+  <p><a class="btn" href="{% url 'catalogo:catalogo' %}#ramos">Ver ramos</a></p>
+  {% endif %}
+
+  {% else %}
+  <h3 class="subtitulo">Ramos que pedí</h3>
+  {% if items %}
+  <div class="personaliza">
+    <div class="pedidos">
+      {% for i in items %}
+      <div class="fila-pedido">
+        <img src="{{ i.ramo.imagen_url }}" alt="{{ i.ramo.nombre }}" loading="lazy">
+        <div class="datos">
+          <span class="nombre">{{ i.ramo.nombre }}</span>
+          <span class="unitario">${{ i.ramo.precio|floatformat:"-2g" }} c/u</span>
+        </div>
+        <div class="cantidad">
+          <form method="post" action="{% url 'catalogo:item_restar' i.pk %}">{% csrf_token %}<button type="submit" class="mini" aria-label="Quitar uno">−</button></form>
+          <span class="n" aria-label="Cantidad">{{ i.cantidad }}</span>
+          <form method="post" action="{% url 'catalogo:item_sumar' i.pk %}">{% csrf_token %}<button type="submit" class="mini" aria-label="Añadir otro">+</button></form>
+        </div>
+        <span class="precio subtotal">${{ i.subtotal|floatformat:"-2g" }}</span>
+        <form method="post" action="{% url 'catalogo:item_quitar' i.pk %}">{% csrf_token %}<button type="submit" class="btn btn-suave">Eliminar</button></form>
+      </div>
+      {% endfor %}
+    </div>
+    <aside class="resumen">
+      <h3>Tu pedido</h3>
+      <p>{{ cantidad_total }} ramo{{ cantidad_total|pluralize }} · {% if pedido.estado == 'confirmado' %}Confirmado ✓{% else %}Pendiente de confirmar{% endif %}</p>
+      <p class="total">Total <strong>${{ total|floatformat:"-2g" }}</strong></p>
+      <form method="post" action="{% url 'catalogo:pedido_confirmar' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn">{% if pedido.estado == 'confirmado' %}Actualizar pedido{% else %}Confirmar pedido{% endif %}</button>
+      </form>
+      <a class="btn btn-suave" href="{% url 'catalogo:catalogo' %}#ramos">Añadir otro ramo</a>
+    </aside>
+  </div>
+  {% else %}
+  <p class="vacio">Aún no has pedido ningún ramo.</p>
+  <p><a class="btn" href="{% url 'catalogo:catalogo' %}#ramos">Ver ramos</a></p>
+  {% endif %}
+  {% endif %}
+</section>
+
+{% else %}
+<section class="seccion" id="cuenta">
+  <h2>Iniciar sesión</h2>
+  <p>Entra o crea tu cuenta para guardar tus ramos favoritos y tus pedidos.</p>
+  <div class="personaliza formularios">
+    <form method="post" class="resumen" action="{% url 'catalogo:cuenta' %}">
+      {% csrf_token %}
+      <input type="hidden" name="accion" value="login">
+      <input type="hidden" name="next" value="{{ next }}">
+      <h3>Ya tengo cuenta</h3>
+      {% for e in form_login.non_field_errors %}<p class="error">{{ e }}</p>{% endfor %}
+      {% for campo in form_login %}
+      <label class="campo" for="{{ campo.id_for_label }}">{{ campo.label }}
+        {{ campo }}
+        {% for e in campo.errors %}<span class="error">{{ e }}</span>{% endfor %}
+      </label>
+      {% endfor %}
+      <button type="submit" class="btn">Iniciar sesión</button>
+    </form>
+
+    <form method="post" class="resumen" action="{% url 'catalogo:cuenta' %}">
+      {% csrf_token %}
+      <input type="hidden" name="accion" value="registro">
+      <input type="hidden" name="next" value="{{ next }}">
+      <h3>Crear cuenta nueva</h3>
+      {% for campo in form_registro %}
+      <label class="campo" for="{{ campo.id_for_label }}">{{ campo.label }}
+        {{ campo }}
+        {% for e in campo.errors %}<span class="error">{{ e }}</span>{% endfor %}
+        {% if campo.help_text %}<span class="ayuda">{{ campo.help_text|safe }}</span>{% endif %}
+      </label>
+      {% endfor %}
+      <button type="submit" class="btn">Crear cuenta</button>
+    </form>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

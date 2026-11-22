@@ -1,0 +1,18 @@
+{% extends "catalogo/base.html" %}
+{% block titulo %}Ubicación y contacto · Flormia Gift{% endblock %}
+{% block contenido %}
+<section class="seccion" id="contacto">
+  <h2>Haz de hoy<br>un día especial</h2>
+  <p>Estamos aquí para ayudarte a celebrar los momentos importantes.</p>
+  <dl class="contacto">
+    <dt>Dirección</dt><dd>{{ direccion }}</dd>
+    {% if contacto.telefono %}<dt>Teléfono</dt><dd>{{ contacto.telefono }}</dd>{% endif %}
+    {% if contacto.whatsapp %}<dt>WhatsApp</dt><dd>{{ contacto.whatsapp }}</dd>{% endif %}
+    <dt>Redes sociales</dt>
+    <dd class="redes">
+      <a class="btn" href="{{ facebook }}" target="_blank" rel="noopener">Facebook</a>
+      <a class="btn" href="{{ instagram }}" target="_blank" rel="noopener">Instagram</a>
+    </dd>
+  </dl>
+</section>
+{% endblock %}
