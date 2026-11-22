@@ -1,0 +1,89 @@
+:root{
+  --crema:#FAF6F1;--rosa:#D4877F;--rosa-suave:#F3D5D0;--durazno:#FBE6DA;
+  --salvia:#A9AE8A;--lavanda:#DCD0EA;--texto:#6B6561;
+  --titulo:"Cormorant Garamond",Georgia,serif;--cuerpo:"Jost",system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0}
+html{scroll-behavior:smooth;scroll-padding-top:64px}
+body{background:var(--crema);color:var(--texto);font:400 1.05rem/1.6 var(--cuerpo)}
+img{max-width:100%;display:block}
+h1,h2,h3{font-family:var(--titulo);font-weight:400;color:var(--rosa);line-height:1.1}
+h2{font-size:clamp(2.2rem,5vw,3.8rem);margin-bottom:1.5rem}
+h3{font-size:1.4rem;color:var(--salvia)}
+.precio{font-family:var(--titulo);font-size:1.7rem;color:var(--rosa)}
+:focus-visible{outline:2px solid var(--rosa);outline-offset:3px}
+.oculto{display:none!important}
+
+/* Barra */
+.barra{position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center;gap:1rem;
+  padding:.7rem clamp(1rem,4vw,3rem);background:rgba(250,246,241,.92);backdrop-filter:blur(6px);border-bottom:1px solid var(--rosa-suave)}
+.marca{font-family:var(--titulo);font-size:1.5rem;color:var(--rosa);text-decoration:none}
+.barra nav{display:flex;gap:1.2rem;flex-wrap:wrap}
+.barra nav a{color:var(--texto);text-decoration:none;font-size:.95rem}
+.barra nav a:hover{color:var(--rosa)}
+
+/* Hero */
+.hero{position:relative;overflow:hidden;min-height:78vh;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:1.2rem;padding:clamp(2rem,7vw,6rem)}
+.hero>*{position:relative;z-index:1}
+.hero h1{font-size:clamp(3rem,9vw,7rem);max-width:10ch}
+.hero p{font-size:1.2rem}
+.mancha{position:absolute;z-index:0!important;width:380px;height:300px;border-radius:50%;filter:blur(45px);opacity:.75}
+.mancha.rosa{background:var(--rosa-suave);top:-90px;right:-80px}
+.mancha.lavanda{background:var(--lavanda);right:12%;bottom:-120px}
+.mancha.salvia{background:#C5CBA9;left:-120px;bottom:-130px}
+
+/* Botones */
+.btn{display:inline-block;border:0;border-radius:999px;background:var(--rosa);color:#fff;font:500 1rem var(--cuerpo);
+  padding:.7rem 1.6rem;text-decoration:none;cursor:pointer;transition:background .2s}
+.btn:hover{background:#c4736b}
+.btn[aria-disabled="true"]{background:#d9cfc9;cursor:not-allowed}
+
+/* Secciones */
+.seccion{padding:clamp(2.5rem,6vw,5rem) clamp(1rem,5vw,5rem);max-width:1200px;margin:auto}
+.rejilla{display:grid;gap:1.5rem}
+.flores{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+.flor{display:grid;grid-template-columns:90px 1fr;gap:1rem;align-items:center}
+.flor img{width:90px;height:110px;object-fit:cover;border-radius:6px}
+
+/* Filtros y productos */
+.filtros{display:flex;flex-wrap:wrap;gap:.6rem;margin-bottom:1.5rem}
+.pill{border:1px solid var(--rosa-suave);background:#fff;color:var(--texto);font:inherit;padding:.45rem 1.1rem;border-radius:999px;cursor:pointer}
+.pill.activo{background:var(--rosa);border-color:var(--rosa);color:#fff}
+.productos{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.tarjeta{display:flex;flex-direction:column;gap:.4rem;background:rgba(251,230,218,.45);padding:0 0 1.2rem;text-align:center;border:2px solid transparent;border-radius:8px;overflow:hidden}
+.tarjeta img{width:100%;aspect-ratio:1;object-fit:cover;margin-bottom:.5rem}
+.tarjeta p,.tarjeta h3{padding:0 1rem}
+.tarjeta .btn{align-self:center;margin-top:auto}
+.tarjeta.seleccionada{border-color:var(--rosa);background:var(--durazno)}
+
+/* Personalización y pedido */
+.personaliza{display:grid;grid-template-columns:1.2fr 1fr;gap:2.5rem;align-items:start}
+.extra{display:flex;align-items:center;gap:1rem;padding:.9rem 0;border-bottom:1px solid var(--rosa-suave);cursor:pointer}
+.extra .icono{width:46px;height:46px;border-radius:50%;background:var(--durazno);display:grid;place-items:center;font-size:1.3rem}
+.extra:nth-child(even) .icono{background:var(--lavanda)}
+.extra .nombre{flex:1;font-family:var(--titulo);font-size:1.35rem;color:var(--salvia)}
+.extra .precio{font-size:1.4rem}
+.extra input{width:1.3rem;height:1.3rem;accent-color:var(--rosa)}
+.resumen{background:#fff;border:1px solid var(--rosa-suave);border-radius:10px;padding:1.5rem;display:grid;gap:.9rem;position:sticky;top:76px}
+.resumen ul{list-style:none;padding:0;display:grid;gap:.3rem}
+.resumen li{display:flex;justify-content:space-between;gap:1rem;font-size:.95rem}
+.vacio{font-style:italic}
+.campo{display:grid;gap:.3rem;font-size:.95rem}
+.campo textarea{font:inherit;color:var(--texto);padding:.6rem;border:1px solid var(--rosa-suave);border-radius:6px;resize:vertical}
+.total{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--titulo);font-size:1.5rem;color:var(--salvia)}
+.total strong{font-size:2.1rem;color:var(--rosa);font-weight:400}
+.aviso{min-height:1.4em;font-size:.9rem;color:var(--rosa)}
+
+/* Contacto y pie */
+.contacto{display:grid;grid-template-columns:9rem 1fr;gap:.8rem 1rem;margin-top:1.5rem;max-width:620px}
+.contacto dt{font-family:var(--titulo);font-size:1.25rem;color:var(--salvia)}
+.contacto dd{background:var(--durazno);padding:.4rem 1rem;border-radius:4px}
+.pie{text-align:center;padding:2rem 1rem;background:var(--durazno);font-size:.95rem}
+
+@media (max-width:800px){
+  .personaliza{grid-template-columns:1fr}
+  .resumen{position:static}
+  .barra nav{display:none}
+  .hero{min-height:64vh}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
