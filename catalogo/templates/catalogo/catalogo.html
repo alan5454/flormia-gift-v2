@@ -3,6 +3,8 @@
 {% block contenido %}
 <section class="seccion" id="ramos">
   <h2>Ramos disponibles</h2>
+  <div class="catalogo-grid">
+  <div>
   {% if ramos %}
   <div class="rejilla productos">
     {% for r in ramos %}
@@ -28,6 +30,43 @@
   {% else %}
   <p>Muy pronto publicaremos nuestros ramos.</p>
   {% endif %}
+  </div>
+
+  <aside class="resumen panel-pedido" id="pedido" aria-label="Tu pedido">
+    <h3>Tu pedido</h3>
+    {% if not user.is_authenticated %}
+    <p class="vacio">Inicia sesión para añadir ramos a tu pedido.</p>
+    <a class="btn btn-suave" href="{% url 'catalogo:cuenta' %}?next={% url 'catalogo:catalogo' %}">Iniciar sesión</a>
+    {% elif items %}
+    <div class="pedidos">
+      {% for i in items %}
+      <div class="fila-pedido">
+        <img src="{{ i.ramo.imagen_url }}" alt="{{ i.ramo.nombre }}" loading="lazy">
+        <div class="datos">
+          <span class="nombre">{{ i.ramo.nombre }}</span>
+          <span class="unitario">${{ i.ramo.precio|floatformat:"-2g" }} c/u</span>
+        </div>
+        <div class="cantidad">
+          <form method="post" action="{% url 'catalogo:item_restar' i.pk %}">{% csrf_token %}<input type="hidden" name="next" value="{% url 'catalogo:catalogo' %}#ramos"><button type="submit" class="mini" aria-label="Quitar uno">−</button></form>
+          <span class="n" aria-label="Cantidad">{{ i.cantidad }}</span>
+          <form method="post" action="{% url 'catalogo:item_sumar' i.pk %}">{% csrf_token %}<input type="hidden" name="next" value="{% url 'catalogo:catalogo' %}#ramos"><button type="submit" class="mini" aria-label="Añadir otro">+</button></form>
+        </div>
+        <span class="precio subtotal">${{ i.subtotal|floatformat:"-2g" }}</span>
+        <form method="post" action="{% url 'catalogo:item_quitar' i.pk %}">{% csrf_token %}<input type="hidden" name="next" value="{% url 'catalogo:catalogo' %}#ramos"><button type="submit" class="btn btn-suave">Eliminar</button></form>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="vacio">Aún no has añadido ramos. Usa “Pedir / Añadir”.</p>
+    {% endif %}
+    <p class="total">Total <strong>${{ total|floatformat:"-2g" }}</strong></p>
+    {% if items %}
+    <a class="btn" href="{% url 'catalogo:pago' %}">Ir al espacio de pagos</a>
+    {% else %}
+    <button type="button" class="btn" disabled>Ir al espacio de pagos</button>
+    {% endif %}
+  </aside>
+  </div>
 </section>
 
 <section class="seccion" id="flores">

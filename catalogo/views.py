@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth import login, logout
+from django import forms
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.db import transaction
 from django.db.models import F
@@ -30,12 +31,21 @@ def _siguiente(request, defecto):
     return defecto
 
 
+def _catalogo_ramos():
+    return f"{reverse('catalogo:catalogo')}#ramos"
+
+
 def _exigir_sesion(request):
     """Si no hay sesión: redirige a /cuenta/ sin tocar la base de datos."""
     if request.user.is_authenticated:
         return None
     messages.info(request, "Inicia sesión o crea tu cuenta para guardar tus ramos.")
     return redirect(f"{reverse('catalogo:cuenta')}?next={reverse('catalogo:catalogo')}")
+
+
+def _volver_a_pedidos(request):
+    """Tras +1/−1/eliminar: vuelve a donde se hizo la acción (por defecto, Mi cuenta)."""
+    return redirect(_siguiente(request, f"{reverse('catalogo:cuenta')}?tab=pedidos"))
 
 
 def _pedido(usuario):
@@ -86,9 +96,15 @@ def catalogo(request):
     for r in ramos:
         r.es_favorito = r.pk in favoritos
         r.en_pedido = cantidades.get(r.pk, 0)
+    pedido = Pedido.objects.filter(usuario=request.user).first() if request.user.is_authenticated else None
+    items = list(pedido.items.select_related("ramo")) if pedido else []
     return render(request, "catalogo/catalogo.html", {
         "seccion": "catalogo",
         "ramos": ramos,
+        "pedido": pedido,
+        "items": items,
+        "total": sum((i.subtotal for i in items), 0),
+        "cantidad_total": sum(i.cantidad for i in items),
         "flores": TipoFlor.objects.filter(activo=True),
     })
 
@@ -158,7 +174,7 @@ def favorito_alternar(request, ramo_id):
     else:
         favorito.delete()
         messages.info(request, f"{ramo.nombre} se quitó de tus favoritos.")
-    return _volver(request, reverse("catalogo:catalogo"))
+    return _volver(request, _catalogo_ramos())
 
 
 @require_POST
@@ -189,7 +205,7 @@ def pedido_agregar(request, ramo_id):
     ramo = _ramo_activo(ramo_id)
     _agregar_al_pedido(request.user, ramo)
     messages.success(request, f"{ramo.nombre} se añadió a tus pedidos.")
-    return _volver(request, reverse("catalogo:catalogo"))
+    return _volver(request, _catalogo_ramos())
 
 
 @require_POST
@@ -200,7 +216,7 @@ def item_sumar(request, item_id):
     if item.cantidad < MAX_POR_RAMO:
         ItemPedido.objects.filter(pk=item.pk).update(cantidad=F("cantidad") + 1)
         _tocar_pedido(item.pedido)
-    return redirect(f"{reverse('catalogo:cuenta')}?tab=pedidos")
+    return _volver_a_pedidos(request)
 
 
 @require_POST
@@ -213,7 +229,7 @@ def item_restar(request, item_id):
     else:
         item.delete()
     _tocar_pedido(item.pedido)
-    return redirect(f"{reverse('catalogo:cuenta')}?tab=pedidos")
+    return _volver_a_pedidos(request)
 
 
 @require_POST
@@ -225,19 +241,56 @@ def item_quitar(request, item_id):
     item.delete()
     _tocar_pedido(pedido)
     messages.info(request, "Ramo quitado de tus pedidos.")
-    return redirect(f"{reverse('catalogo:cuenta')}?tab=pedidos")
+    return _volver_a_pedidos(request)
 
 
-@require_POST
-def pedido_confirmar(request):
+class PagoForm(forms.ModelForm):
+    forma_pago = forms.ChoiceField(label="Forma de pago", choices=Pedido.FORMAS_PAGO, widget=forms.RadioSelect)
+    entrega = forms.ChoiceField(label="Entrega", choices=Pedido.ENTREGAS, widget=forms.RadioSelect)
+    direccion_entrega = forms.CharField(
+        label="Dirección de entrega", max_length=250, required=False,
+        widget=forms.TextInput(attrs={"placeholder": "Calle, número, colonia"}),
+    )
+
+    class Meta:
+        model = Pedido
+        fields = ["forma_pago", "entrega", "direccion_entrega"]
+
+    def clean(self):
+        datos = super().clean()
+        if datos.get("entrega") == "domicilio" and not (datos.get("direccion_entrega") or "").strip():
+            self.add_error("direccion_entrega", "Escribe la dirección para la entrega a domicilio.")
+        if datos.get("entrega") == "recoger":
+            datos["direccion_entrega"] = ""
+        return datos
+
+
+def pago(request):
+    """Espacio de pagos: desglose, forma de pago/entrega y confirmación del pedido."""
     if (r := _exigir_sesion(request)):
         return r
     pedido = Pedido.objects.filter(usuario=request.user).first()
-    if not pedido or not pedido.items.exists():
-        messages.error(request, "Añade al menos un ramo antes de confirmar.")
+    items = list(pedido.items.select_related("ramo")) if pedido else []
+    if not items:
+        messages.info(request, "Añade al menos un ramo para ir al espacio de pagos.")
+        return redirect(_catalogo_ramos())
+
+    if request.method == "POST":
+        form = PagoForm(request.POST, instance=pedido)
+        if form.is_valid():
+            pedido = form.save(commit=False)
+            pedido.estado = Pedido.CONFIRMADO
+            pedido.confirmado_en = timezone.now()
+            pedido.save()
+            messages.success(request, "¡Pedido confirmado y guardado!")
+            return redirect(f"{reverse('catalogo:cuenta')}?tab=pedidos")
     else:
-        pedido.estado = Pedido.CONFIRMADO
-        pedido.confirmado_en = timezone.now()
-        pedido.save()
-        messages.success(request, "¡Pedido confirmado y guardado!")
-    return redirect(f"{reverse('catalogo:cuenta')}?tab=pedidos")
+        form = PagoForm(instance=pedido)
+    return render(request, "catalogo/pago.html", {
+        "seccion": "catalogo",
+        "pedido": pedido,
+        "items": items,
+        "total": sum((i.subtotal for i in items), 0),
+        "cantidad_total": sum(i.cantidad for i in items),
+        "form": form,
+    })

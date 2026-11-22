@@ -5,7 +5,8 @@
 }
 *{box-sizing:border-box;margin:0}
 html{scroll-behavior:smooth;scroll-padding-top:90px}
-body{background:var(--crema);color:var(--texto);font:400 1.05rem/1.6 var(--cuerpo)}
+body{background:var(--crema);color:var(--texto);font:400 1.05rem/1.6 var(--cuerpo);min-height:100vh;display:flex;flex-direction:column}
+main{flex:1;width:100%}
 img{max-width:100%;display:block}
 h1,h2,h3{font-family:var(--titulo);font-weight:400;color:var(--rosa);line-height:1.1}
 h2{font-size:clamp(2.2rem,5vw,3.8rem);margin-bottom:1.5rem}
@@ -102,6 +103,17 @@ a.pill{text-decoration:none;display:inline-block}
 .ayuda{font-size:.8rem;line-height:1.3}
 .ayuda ul{padding-left:1.1rem}
 
+.catalogo-grid{display:grid;grid-template-columns:2fr 1fr;gap:2.5rem;align-items:start}
+.catalogo-grid .productos{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
+.panel-pedido{max-height:calc(100vh - 96px);overflow-y:auto}
+.panel-pedido .btn[disabled]{opacity:.5;cursor:not-allowed}
+.panel-pedido a.btn{text-align:center}
+.opciones{border:0;padding:0;display:grid;gap:.4rem}
+.opciones legend{font-family:var(--titulo);font-size:1.3rem;color:var(--salvia);margin-bottom:.3rem}
+.opciones label{display:flex;gap:.5rem;align-items:center}
+.opciones input{accent-color:var(--rosa)}
+.vacio{font-size:.95rem}
+
 /* Contacto y pie */
 .contacto{display:grid;grid-template-columns:9rem 1fr;gap:.8rem 1rem;margin-top:1.5rem;max-width:620px}
 .contacto dt{font-family:var(--titulo);font-size:1.25rem;color:var(--salvia)}
@@ -110,7 +122,8 @@ a.pill{text-decoration:none;display:inline-block}
 .pie{text-align:center;padding:2rem 1rem;background:var(--durazno);font-size:.95rem}
 
 @media (max-width:800px){
-  .personaliza{grid-template-columns:1fr}
+  .personaliza,.catalogo-grid{grid-template-columns:1fr}
+  .panel-pedido{max-height:none}
   .resumen{position:static}
   .barra{flex-direction:column;align-items:flex-start;gap:.3rem}
   .barra nav{gap:.4rem 1rem}

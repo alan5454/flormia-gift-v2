@@ -94,8 +94,8 @@ class UsuarioTests(Base):
         item.refresh_from_db()
         self.assertEqual(item.cantidad, 2)
         r = self.client.get(reverse("catalogo:cuenta") + "?tab=pedidos", secure=True)
-        self.assertContains(r, "Confirmar pedido")
-        self.post("pedido_confirmar")
+        self.assertContains(r, "Ir al espacio de pagos")
+        self.post("pago", data={"forma_pago": "efectivo", "entrega": "recoger"})
         self.assertEqual(Pedido.objects.get().estado, Pedido.CONFIRMADO)
         self.post("item_sumar", [item.pk])
         self.assertEqual(Pedido.objects.get().estado, Pedido.PENDIENTE)
@@ -121,3 +121,90 @@ class UsuarioTests(Base):
     def test_get_no_permitido(self):
         r = self.client.get(reverse("catalogo:pedido_agregar", args=[self.ramo.pk]), secure=True)
         self.assertEqual(r.status_code, 405)
+
+
+class CatalogoPedidoYPagoTests(Base):
+    def setUp(self):
+        call_command("cargar_datos")
+        self.user = User.objects.create_user("ana", password="x-Segura-123")
+        self.ramo = Ramo.objects.first()
+
+    def entrar(self):
+        self.client.login(username="ana", password="x-Segura-123")
+
+    def test_panel_sin_sesion_y_boton_pago_deshabilitado(self):
+        r = self.get("catalogo")
+        self.assertContains(r, "Tu pedido")
+        self.assertContains(r, "Inicia sesión para añadir ramos")
+        self.assertContains(r, "disabled>Ir al espacio de pagos")
+        self.assertNotContains(r, reverse("catalogo:pago"))
+
+    def test_nav_solo_cuatro_enlaces(self):
+        r = self.get("catalogo")
+        nav = r.content.decode().split("<nav")[1].split("</nav>")[0]
+        self.assertEqual(nav.count("<a "), 4)
+
+    def test_panel_en_catalogo_con_acciones_y_retorno(self):
+        self.entrar()
+        self.assertContains(self.get("catalogo"), "Aún no has añadido ramos")
+        destino = reverse("catalogo:catalogo") + "#ramos"
+        r = self.post("pedido_agregar", [self.ramo.pk])
+        self.assertEqual(r["Location"], destino)
+        r = self.get("catalogo")
+        self.assertContains(r, "Eliminar")
+        self.assertContains(r, 'href="%s">Ir al espacio de pagos' % reverse("catalogo:pago"))
+        item = ItemPedido.objects.get()
+        for nombre, cantidad in (("item_sumar", 2), ("item_restar", 1)):
+            r = self.client.post(reverse(f"catalogo:{nombre}", args=[item.pk]), {"next": destino}, secure=True)
+            self.assertEqual(r["Location"], destino)
+            item.refresh_from_db()
+            self.assertEqual(item.cantidad, cantidad)
+        r = self.client.post(reverse("catalogo:item_quitar", args=[item.pk]), {"next": destino}, secure=True)
+        self.assertEqual(r["Location"], destino)
+        self.assertEqual(ItemPedido.objects.count(), 0)
+
+    def test_next_externo_se_ignora(self):
+        self.entrar()
+        self.post("pedido_agregar", [self.ramo.pk])
+        item = ItemPedido.objects.get()
+        r = self.client.post(reverse("catalogo:item_sumar", args=[item.pk]), {"next": "https://malo.example/"}, secure=True)
+        self.assertEqual(r["Location"], reverse("catalogo:cuenta") + "?tab=pedidos")
+
+    def test_pago_sin_sesion_redirige_y_no_guarda(self):
+        r = self.get("pago")
+        self.assertTrue(r["Location"].startswith(reverse("catalogo:cuenta")))
+        r = self.post("pago", data={"forma_pago": "efectivo", "entrega": "recoger"})
+        self.assertTrue(r["Location"].startswith(reverse("catalogo:cuenta")))
+        self.assertEqual(Pedido.objects.count(), 0)
+
+    def test_pago_vacio_regresa_al_catalogo(self):
+        self.entrar()
+        r = self.get("pago")
+        self.assertEqual(r["Location"], reverse("catalogo:catalogo") + "#ramos")
+
+    def test_pago_desglose_y_confirmacion(self):
+        self.entrar()
+        self.post("pedido_agregar", [self.ramo.pk])
+        self.post("pedido_agregar", [self.ramo.pk])
+        r = self.get("pago")
+        self.assertContains(r, "Espacio de pagos")
+        self.assertContains(r, self.ramo.nombre)
+        self.assertContains(r, "Total a pagar")
+        self.assertContains(r, "Transferencia bancaria")
+        self.assertContains(r, "Confirmar y guardar pedido")
+        # Datos incompletos: no confirma.
+        self.post("pago", data={"forma_pago": "efectivo"})
+        self.assertEqual(Pedido.objects.get().estado, Pedido.PENDIENTE)
+        # Domicilio exige dirección.
+        r = self.post("pago", data={"forma_pago": "efectivo", "entrega": "domicilio"})
+        self.assertContains(r, "Escribe la dirección")
+        self.assertEqual(Pedido.objects.get().estado, Pedido.PENDIENTE)
+        # Confirmación válida.
+        r = self.post("pago", data={"forma_pago": "transferencia", "entrega": "domicilio",
+                                    "direccion_entrega": "Calle 1, Centro"})
+        self.assertEqual(r.status_code, 302)
+        p = Pedido.objects.get()
+        self.assertEqual((p.estado, p.forma_pago, p.entrega, p.direccion_entrega),
+                         (Pedido.CONFIRMADO, "transferencia", "domicilio", "Calle 1, Centro"))
+        self.assertIsNotNone(p.confirmado_en)
+        self.assertEqual(p.total, self.ramo.precio * 2)

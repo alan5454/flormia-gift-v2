@@ -64,10 +64,7 @@
       <h3>Tu pedido</h3>
       <p>{{ cantidad_total }} ramo{{ cantidad_total|pluralize }} · {% if pedido.estado == 'confirmado' %}Confirmado ✓{% else %}Pendiente de confirmar{% endif %}</p>
       <p class="total">Total <strong>${{ total|floatformat:"-2g" }}</strong></p>
-      <form method="post" action="{% url 'catalogo:pedido_confirmar' %}">
-        {% csrf_token %}
-        <button type="submit" class="btn">{% if pedido.estado == 'confirmado' %}Actualizar pedido{% else %}Confirmar pedido{% endif %}</button>
-      </form>
+      <a class="btn" href="{% url 'catalogo:pago' %}">{% if pedido.estado == 'confirmado' %}Actualizar pedido en el espacio de pagos{% else %}Ir al espacio de pagos{% endif %}</a>
       <a class="btn btn-suave" href="{% url 'catalogo:catalogo' %}#ramos">Añadir otro ramo</a>
     </aside>
   </div>

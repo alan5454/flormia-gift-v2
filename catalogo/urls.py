@@ -17,5 +17,5 @@ urlpatterns = [
     path("pedido/item/<int:item_id>/sumar/", views.item_sumar, name="item_sumar"),
     path("pedido/item/<int:item_id>/restar/", views.item_restar, name="item_restar"),
     path("pedido/item/<int:item_id>/quitar/", views.item_quitar, name="item_quitar"),
-    path("pedido/confirmar/", views.pedido_confirmar, name="pedido_confirmar"),
+    path("pago/", views.pago, name="pago"),
 ]

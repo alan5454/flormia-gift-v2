@@ -81,11 +81,20 @@ class Pedido(models.Model):
     """Lista de ramos pedidos por un usuario (una por usuario)."""
     PENDIENTE, CONFIRMADO = "pendiente", "confirmado"
     ESTADOS = [(PENDIENTE, "Pendiente de confirmar"), (CONFIRMADO, "Confirmado")]
+    FORMAS_PAGO = [
+        ("efectivo", "Efectivo"),
+        ("transferencia", "Transferencia bancaria"),
+        ("tarjeta", "Tarjeta (terminal al recoger o entregar)"),
+    ]
+    ENTREGAS = [("recoger", "Recoger en la florería"), ("domicilio", "Entrega a domicilio")]
 
     usuario = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="pedido")
     estado = models.CharField(max_length=10, choices=ESTADOS, default=PENDIENTE)
     actualizado = models.DateTimeField(auto_now=True)
     confirmado_en = models.DateTimeField(null=True, blank=True)
+    forma_pago = models.CharField("forma de pago", max_length=15, choices=FORMAS_PAGO, blank=True)
+    entrega = models.CharField(max_length=10, choices=ENTREGAS, blank=True)
+    direccion_entrega = models.CharField("dirección de entrega", max_length=250, blank=True)
 
     def __str__(self):
         return f"Pedido de {self.usuario} ({self.get_estado_display()})"

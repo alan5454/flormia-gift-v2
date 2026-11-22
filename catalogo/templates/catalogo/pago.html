@@ -1,0 +1,53 @@
+{% extends "catalogo/base.html" %}
+{% block titulo %}Espacio de pagos · Flormia Gift{% endblock %}
+{% block contenido %}
+<section class="seccion" id="pago">
+  <h2>Espacio de pagos</h2>
+  <p>Revisa tu pedido, elige cómo pagar y cómo recibirlo.</p>
+  <div class="personaliza">
+    <div>
+      <h3 class="subtitulo">Tus ramos</h3>
+      <div class="pedidos">
+        {% for i in items %}
+        <div class="fila-pedido">
+          <img src="{{ i.ramo.imagen_url }}" alt="{{ i.ramo.nombre }}" loading="lazy">
+          <div class="datos">
+            <span class="nombre">{{ i.ramo.nombre }}</span>
+            <span class="unitario">{{ i.cantidad }} × ${{ i.ramo.precio|floatformat:"-2g" }}</span>
+          </div>
+          <span class="precio subtotal">${{ i.subtotal|floatformat:"-2g" }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      <p class="total">Total a pagar <strong>${{ total|floatformat:"-2g" }}</strong></p>
+      <p><a class="btn btn-suave" href="{% url 'catalogo:catalogo' %}#ramos">Modificar pedido</a></p>
+    </div>
+
+    <form method="post" class="resumen" action="{% url 'catalogo:pago' %}">
+      {% csrf_token %}
+      <h3>Pago y entrega</h3>
+      <p>{{ cantidad_total }} ramo{{ cantidad_total|pluralize }} · {% if pedido.estado == 'confirmado' %}Confirmado ✓{% else %}Pendiente de confirmar{% endif %}</p>
+      {% for e in form.non_field_errors %}<p class="error">{{ e }}</p>{% endfor %}
+
+      <fieldset class="opciones">
+        <legend>Forma de pago</legend>
+        {% for radio in form.forma_pago %}<label>{{ radio.tag }} {{ radio.choice_label }}</label>{% endfor %}
+        {% for e in form.forma_pago.errors %}<span class="error">{{ e }}</span>{% endfor %}
+      </fieldset>
+
+      <fieldset class="opciones">
+        <legend>Entrega</legend>
+        {% for radio in form.entrega %}<label>{{ radio.tag }} {{ radio.choice_label }}</label>{% endfor %}
+        {% for e in form.entrega.errors %}<span class="error">{{ e }}</span>{% endfor %}
+      </fieldset>
+
+      <label class="campo" for="{{ form.direccion_entrega.id_for_label }}">Dirección (solo si es a domicilio)
+        {{ form.direccion_entrega }}
+        {% for e in form.direccion_entrega.errors %}<span class="error">{{ e }}</span>{% endfor %}
+      </label>
+
+      <button type="submit" class="btn">{% if pedido.estado == 'confirmado' %}Actualizar y guardar pedido{% else %}Confirmar y guardar pedido{% endif %}</button>
+    </form>
+  </div>
+</section>
+{% endblock %}
